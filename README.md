@@ -1,4 +1,7 @@
-#JynxStructure
+# Jynx
+[Jynx(bird)](https://en.wikipedia.org/wiki/Wryneck)
+
+## JynxStructure
 
 Requires Java V24.
 
