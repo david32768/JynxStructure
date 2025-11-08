@@ -1,6 +1,7 @@
 package com.github.david32768.jynxstructure;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
@@ -40,46 +41,34 @@ public class CPEntry {
         }
         ConstantPoolType cp = cpopt.get();
         EntryType et = cp.getEntryType();
-        Object value;
-        switch(et) {
-            case UTF8:
-                value = fromCPUTF8(block);
-                break;
-            case INTEGER:
-                value = block.getInt();
-                break;
-            case FLOAT:
-                value = block.getFloat();
-                break;
-            case LONG:
-                value = block.getLong();
-                break;
-            case DOUBLE:
-                value = block.getDouble();
-                break;
-            case INDIRECT:
+        Object value = switch(et) {
+            case UTF8 -> fromCPUTF8(block);
+            case INTEGER -> block.getInt();
+            case FLOAT -> block.getFloat();
+            case LONG -> block.getLong();
+            case DOUBLE -> block.getDouble();
+            case INDIRECT -> {
                 int itemct = cp.poolct();
                 int[] items = new int[itemct];
                 for (int j = 0; j < itemct; ++j) {
                     items[j] = Short.toUnsignedInt(block.getShort());
                 }
-                value = items;
-                break;
-            case BOOTSTRAP:
-                items = new int[2];
+                yield items;
+            }
+            case BOOTSTRAP -> {
+                int[] items = new int[2];
                 items[0] = Short.toUnsignedInt(block.getShort());
                 items[1] = Short.toUnsignedInt(block.getShort());
-                value = items;
-                break;
-            case HANDLE:
-                items = new int[2];
+                yield items;
+            }
+            case HANDLE -> {
+                int[] items = new int[2];
                 items[0] = Byte.toUnsignedInt(block.get());
                 items[1] = Short.toUnsignedInt(block.getShort());
-                value = items;
-                break;
-            default:
-                throw new AssertionError();
-        }
+                yield items;
+            }
+            default -> throw new AssertionError();
+        };
         return new CPEntry(cp,value);
     }
 
@@ -124,13 +113,27 @@ public class CPEntry {
         return sb.toString();
     }
 
+    public String typeString() {
+        String name = type.abbrev();
+        var et = type.getEntryType();
+        return switch(et) {
+            case UTF8 -> String.format("%s(%d)", name, ((String)value).length());
+            case INDIRECT -> String.format("%s%s", name, Arrays.toString((int[])value));
+            case HANDLE, BOOTSTRAP -> {
+                int[] ivalues = (int[])value;
+                yield String.format("%s{%d}[%d]", name, ivalues[0], ivalues[1]);
+            }
+            default -> name;
+        };
+    }
+    
     @Override
     public String toString() {
         String valuestr;
-        if (value instanceof int[]) {
+        if (value instanceof int[] intarr) {
             StringBuilder sb = new StringBuilder();
             sb.append('[').append(' ');
-            for (int index:(int[])value) {
+            for (int index : intarr) {
                 sb.append(index).append(' ');
             }
             sb.append(']');

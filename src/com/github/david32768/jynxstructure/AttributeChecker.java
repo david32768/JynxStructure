@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import static com.github.david32768.jynxfree.jynx.Global.JVM_VERSION;
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
-import static com.github.david32768.jynxfree.jynx.Global.OPTION;
 import static com.github.david32768.jynxstructure.my.Message.M506;
 import static com.github.david32768.jynxstructure.my.Message.M507;
 import static com.github.david32768.jynxstructure.my.Message.M519;
@@ -16,7 +15,6 @@ import com.github.david32768.jynxfree.jvm.ConstantPoolType;
 import com.github.david32768.jynxfree.jvm.Context;
 import com.github.david32768.jynxfree.jvm.FrameType;
 import com.github.david32768.jynxfree.jvm.JvmVersion;
-import com.github.david32768.jynxfree.jynx.GlobalOption;
 import com.github.david32768.jynxfree.jynx.LogIllegalArgumentException;
 
 public class AttributeChecker {
@@ -24,57 +22,32 @@ public class AttributeChecker {
     private AttributeChecker() {
     }
     
-    public static void check(AttributeEntry[] entries,  IndentPrinter ptr, AttributeBuffer buffer) {
+    public static void check(AttributeEntry[] entries, AttributeBuffer buffer) {
         for (AttributeEntry entry:entries) {
-            AttributeChecker.checkEntry(entry, ptr, buffer);
+            AttributeChecker.checkEntry(entry, buffer);
         }
     }
 
-    private static void checkEntry(AttributeEntry entry, IndentPrinter ptr, AttributeBuffer buffer) {
+    private static void checkEntry(AttributeEntry entry, AttributeBuffer buffer) {
         switch(entry) {
-            case ANNOTATION:
-            case DEFAULT_ANNOTATION:
-            case PARAMETER_ANNOTATION:
-            case TYPE_ANNOTATION:
-                AnnotationEntry.get(entry).accept(ptr, buffer);
-                break;
-            case LABEL:
-                buffer.asCodeBuffer().nextLabel();
-                break;
-            case LV_INDEX:
-                buffer.asCodeBuffer().nextVar();
-                break;
-            case INNERCLASS_ACCESS:
+            case ANNOTATION, DEFAULT_ANNOTATION, PARAMETER_ANNOTATION, TYPE_ANNOTATION ->
+                AnnotationEntry.get(entry).accept(buffer);
+            case LABEL -> buffer.asCodeBuffer().nextLabel();
+            case LV_INDEX -> buffer.asCodeBuffer().nextVar();
+            case INNERCLASS_ACCESS -> {
                 int flags =  buffer.nextUnsignedShort();
                 AccessFlag.getEnumSet(flags, Context.INNER_CLASS, JVM_VERSION());
-                break;
-            case METHOD_PARAMETER_ACCESS:
-                flags =  buffer.nextUnsignedShort();
+            }
+            case METHOD_PARAMETER_ACCESS -> {
+                int flags = buffer.nextUnsignedShort();
                 AccessFlag.getEnumSet(flags, Context.PARAMETER, JVM_VERSION());
-                break;
-            case USHORT:
-                buffer.nextUnsignedShort();
-                break;
-            case LABEL_LENGTH:
-                checkLabelLength(buffer.asCodeBuffer());
-                break;
-            case INLINE_UTF8:
-                CPEntry.fromUTF8CP(buffer.bb());
-                break;
-            case FRAME:
-                checkStackFrame(buffer.asCodeBuffer());
-                break;
-            case BOOTSTRAP:
-                AttributeChecker.checkBootstrap(ptr, buffer);
-                break;
-            case CONSTANT:
-            case CLASSNAME:
-            case OPT_CLASSNAME:
-            case UTF8:
-            case OPT_UTF8:
-            case OPT_NAME_TYPE:
-            case PACKAGENAME:
-            case STRING:
+            }
+            case USHORT -> buffer.nextUnsignedShort();
+            case LABEL_LENGTH -> checkLabelLength(buffer.asCodeBuffer());
+            case INLINE_UTF8 -> CPEntry.fromUTF8CP(buffer.bb());
+            case FRAME -> checkStackFrame(buffer.asCodeBuffer());
+            case BOOTSTRAP -> AttributeChecker.checkBootstrap(buffer);
+            case CONSTANT, CLASSNAME, OPT_CLASSNAME, UTF8, OPT_UTF8, OPT_NAME_TYPE, PACKAGENAME, STRING -> {
                 assert entry.isCP();
                 Optional<CPEntry> optentry = buffer.nextOptCPEntry();
                 if (optentry.isPresent() || !entry.isOptional()) {
@@ -86,10 +59,8 @@ public class AttributeChecker {
                         LOG(M519, cptype, entry);
                     }
                 }
-                break;
-
-            default:
-                throw new EnumConstantNotPresentException(entry.getClass(), entry.name());
+            }
+            default -> throw new EnumConstantNotPresentException(entry.getClass(), entry.name());
         }
     }
     
@@ -98,7 +69,7 @@ public class AttributeChecker {
         int end = buffer.nextEndOffset(start);
     }
 
-    private static void checkBootstrap(IndentPrinter ptr, AttributeBuffer buffer) {
+    private static void checkBootstrap(AttributeBuffer buffer) {
         CPEntry methodcp = buffer.nextCPEntry(ConstantPoolType.CONSTANT_MethodHandle);
         JvmVersion jvmversion = JVM_VERSION();
         int argct = buffer.nextUnsignedShort();
@@ -113,11 +84,7 @@ public class AttributeChecker {
             }
             entries[k + 1] = argcp;
         }
-        if (OPTION(GlobalOption.DETAIL)) {
-            buffer.pool().addBootstraps(entries, ptr);
-        } else {
-            buffer.pool().addBootstraps(entries);
-        }
+        buffer.pool().addBootstrap(entries);
     }
 
     private static void checkStackFrame(CodeBuffer buffer) {
@@ -130,34 +97,32 @@ public class AttributeChecker {
             checkVerificationTypeInfo(buffer,1);
         } else {
             switch (tag) {
-                default:  // future use
+                default ->
+                    // future use
                     // "invalid tag %d"
                     throw new LogIllegalArgumentException(M521,tag);
-                case 247: // same_locals_1_stack_item_frame_extended
+                case 247 -> {
+                    // same_locals_1_stack_item_frame_extended
                     delta = buffer.nextUnsignedShort();
                     checkVerificationTypeInfo(buffer,1);
-                    break;
-                case 248: // chop
-                case 249:
-                case 250:
+                }
+                case 248, 249, 250 -> // chop
                     delta = buffer.nextUnsignedShort();
-                    break;
-                case 251: // same_frame_extended
+                case 251 -> // same_frame_extended
                     delta = buffer.nextUnsignedShort();
-                    break;
-                case 252: // append_frame
-                case 253:
-                case 254:
+                case 252, 253, 254 -> {
+                    // append_frame
                     delta = buffer.nextUnsignedShort();
                     checkVerificationTypeInfo(buffer,tag - 251);
-                    break;
-                case 255: // full_frame
+                }
+                case 255 -> {
+                    // full_frame
                     delta = buffer.nextUnsignedShort();
                     int locals = buffer.nextUnsignedShort();
                     checkVerificationTypeInfo(buffer,locals);
                     int stack = buffer.nextUnsignedShort();
                     checkVerificationTypeInfo(buffer,stack);
-                    break;
+                }
             }
         }
         buffer.addDelta(delta);

@@ -34,6 +34,12 @@ public enum Message implements JynxMessage {
     M524(ERROR,"branches to middle of instruction - %s"),
     M526(ERROR,"type_path_kind = %d is not in range [0,3]"),
     M527(ERROR,"type_argument_index is %d but must be 0 for type_path_kind [0,2]"),
+    M529(WARNING,"%d constant pool entries are not used"),
+    M530(INFO,"Constant Pool Entry %d is not used: type = %s value = %s"),
+    M533("expected zero byte in %s is %d"),
+    M534(INFO,"*** entry %d is duplicate of %d ***"),
+    M535(INFO,"%d bootstraps are not used"),
+    M536(INFO,"BootStrap %d is not used"),
     ;
 
     private final LogMsgType logtype;

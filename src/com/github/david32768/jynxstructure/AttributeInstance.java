@@ -76,20 +76,17 @@ public abstract class AttributeInstance {
 
     public static AttributeInstance getInstance(AttributeBuffer attrbuff) {
         
-       StandardAttribute uattr = StandardAttribute.getInstance(attrbuff.name());
+        StandardAttribute uattr = StandardAttribute.getInstance(attrbuff.name());
         try {
-            if (uattr == null) {
-                return new UnknownAttribute(attrbuff);
-            } else {
-                switch(uattr.type()) {
-                    case MODULE:
-                        return new ModuleAttribute(uattr, attrbuff);
-                }
-                return new SimpleAttribute(uattr, attrbuff);
-            }
+            var type = uattr == null? null: uattr.type();
+            return switch(type)  {
+                case null -> new UnknownAttribute(attrbuff);
+                case MODULE -> new ModuleAttribute(uattr, attrbuff);                    
+                default -> new SimpleAttribute(uattr, attrbuff);
+            };
         } catch (Exception ex) {
-                 LOG(ex);
-                 return null;
+            LOG(ex);
+            return null;
         }
     }
     

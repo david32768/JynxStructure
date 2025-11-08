@@ -24,8 +24,8 @@ public class IndentPrinter {
     }
 
     private static final String INDENT_SHIFT = "  ";
-    private static final String CONTINUATION = "+ ";
-    private static final int MAXIMUM_LINE_LENGTH = 110;
+    private static final String CONTINUATION = "";
+    private static final int MAXIMUM_LINE_LENGTH = 80;
     private static final int MAXIMUM_SEARCH_LENGTH = 20;
     private static final String NEWLINE = "\n";
     private static final String SPLIT_CHARS = " );/"; // in preferred order for splitting

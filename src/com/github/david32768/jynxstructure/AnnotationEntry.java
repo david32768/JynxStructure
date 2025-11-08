@@ -1,6 +1,6 @@
 package com.github.david32768.jynxstructure;
 
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
 import static com.github.david32768.jynxstructure.my.Message.M523;
@@ -16,45 +16,38 @@ import com.github.david32768.jynxfree.jynx.LogIllegalArgumentException;
 public class AnnotationEntry {
 
     private final AttributeBuffer buffer;
-    private final IndentPrinter ptr;
 
-    public AnnotationEntry(AttributeBuffer buffer, IndentPrinter ptr) {
+    public AnnotationEntry(AttributeBuffer buffer) {
         this.buffer = buffer;
-        this.ptr = ptr;
     }
 
-    public static BiConsumer<IndentPrinter,AttributeBuffer> get(AttributeEntry entry) {
-        switch(entry) {
-            case ANNOTATION:
-                return AnnotationEntry::annotationCheck;
-            case DEFAULT_ANNOTATION:
-                return AnnotationEntry::defaultAnnotationCheck;
-            case PARAMETER_ANNOTATION:
-                return AnnotationEntry::parameterAnnotationCheck;
-            case TYPE_ANNOTATION:
-                return AnnotationEntry::typeAnnotationCheck;
-            default:
-                throw new EnumConstantNotPresentException(entry.getClass(), entry.name());
-        }
+    public static Consumer<AttributeBuffer> get(AttributeEntry entry) {
+        return switch(entry) {
+            case ANNOTATION -> AnnotationEntry::annotationCheck;
+            case DEFAULT_ANNOTATION -> AnnotationEntry::defaultAnnotationCheck;
+            case PARAMETER_ANNOTATION -> AnnotationEntry::parameterAnnotationCheck;
+            case TYPE_ANNOTATION -> AnnotationEntry::typeAnnotationCheck;
+            default -> throw new EnumConstantNotPresentException(entry.getClass(), entry.name());
+        };
     }
     
-    private static void annotationCheck(IndentPrinter ptr, AttributeBuffer buffer) {
-        AnnotationEntry x = new AnnotationEntry(buffer, ptr);
+    private static void annotationCheck(AttributeBuffer buffer) {
+        AnnotationEntry x = new AnnotationEntry(buffer);
         x.checkAnnotation();
     }
     
-    private static void defaultAnnotationCheck(IndentPrinter ptr, AttributeBuffer buffer) {
-        AnnotationEntry x = new AnnotationEntry(buffer,ptr);
+    private static void defaultAnnotationCheck(AttributeBuffer buffer) {
+        AnnotationEntry x = new AnnotationEntry(buffer);
         x.checkElementValue();
     }
     
-    private static void parameterAnnotationCheck(IndentPrinter ptr, AttributeBuffer buffer) {
-        AnnotationEntry x = new AnnotationEntry(buffer,ptr);
+    private static void parameterAnnotationCheck(AttributeBuffer buffer) {
+        AnnotationEntry x = new AnnotationEntry(buffer);
         x.checkParameterAnnotation();
     }
     
-    private static void typeAnnotationCheck(IndentPrinter ptr, AttributeBuffer buffer) {
-        AnnotationEntry x = new AnnotationEntry(buffer,ptr);
+    private static void typeAnnotationCheck(AttributeBuffer buffer) {
+        AnnotationEntry x = new AnnotationEntry(buffer);
         x.checkTypeAnnotation();
     }
     
@@ -88,41 +81,22 @@ public class AnnotationEntry {
     private void checkElementValue() {
         char tag = (char)buffer.nextUnsignedByte();
         switch(tag) {
-            case 'B':
-            case 'C':
-            case 'I':
-            case 'S':
-            case 'Z':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Integer);
-                break;
-            case 'J':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Long);
-                break;
-            case 'F':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Float);
-                break;
-            case 'D':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Double);
-                break;
-            case 's':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8);
-                break;
-            case 'e':
+            case 'B', 'C', 'I', 'S', 'Z' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Integer);
+            case 'J' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Long);
+            case 'F' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Float);
+            case 'D' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Double);
+            case 's' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8);
+            case 'e' -> {
                 buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8); // type
                 buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8); // name
-                break;
-            case 'c':
-                buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8); // name
-                break;
-            case '@':
-                checkAnnotation();
-                break;
-            case '[':
-                checkArrayValues();
-                break;
-            default:
+            }
+            case 'c' -> buffer.nextCPEntry(ConstantPoolType.CONSTANT_Utf8); // name
+            case '@' -> checkAnnotation();
+            case '[' -> checkArrayValues();
+            default -> {
                 String msg = String.format("unknown annotation tag '%c'", tag);
                 throw new IllegalArgumentException(msg);
+            }
         }
     }
 
@@ -139,36 +113,27 @@ public class AnnotationEntry {
             throw new LogIllegalArgumentException(M523, typeref, target_type, context);
         }
         switch(typeref) {
-            case trc_param:
-            case trm_param:
+            case trc_param, trm_param ->
                 // type_parameter_target
                 buffer.nextUnsignedByte();
-                break;
-            case trc_extends:
+            case trc_extends ->
                 // supertype_target
                 buffer.nextUnsignedShort();
-                break;
-            case trc_param_bound:
-            case trm_param_bound:
+            case trc_param_bound, trm_param_bound -> {
                 // type_parameter_bound_target
                 buffer.nextUnsignedByte();
                 buffer.nextUnsignedByte();
-                break;
-            case trf_field:
-            case trm_return:
-            case trm_receiver:
+            }
+            case trf_field, trm_return, trm_receiver -> {
                 // empty_target
-                break;
-            case trm_formal:
+            }
+            case trm_formal ->
                 // formal_parameter_target
                 buffer.nextUnsignedByte();
-                break;
-            case trm_throws:
+            case trm_throws ->
                 // throws_target
                 buffer.nextUnsignedShort();
-                break;
-            case tro_var:
-            case tro_resource:
+            case tro_var, tro_resource -> {
                 // local_var_target
                 int table_length = buffer.nextUnsignedShort();
                 for (int i = 0; i < table_length; ++i) {
@@ -176,29 +141,19 @@ public class AnnotationEntry {
                     buffer.nextUnsignedShort();
                     buffer.nextUnsignedShort();
                 }
-                break;
-            case trt_except:
+            }
+            case trt_except ->
                 // catch_target
                 buffer.nextUnsignedShort();
-                break;
-            case tro_instanceof:
-            case tro_new:
-            case tro_newref:
-            case tro_methodref:
+            case tro_instanceof, tro_new, tro_newref, tro_methodref ->
                 // offset_target
                 buffer.asCodeBuffer().nextLabel();
-                break;
-            case tro_cast:
-            case tro_argnew:
-            case tro_argmethod:
-            case tro_argnewref:
-            case tro_argmethodref:
+            case tro_cast, tro_argnew, tro_argmethod, tro_argnewref, tro_argmethodref -> {
                 // type_argument target
                 buffer.nextUnsignedShort();
                 buffer.nextUnsignedByte();
-                break;
-            default:
-                throw new EnumConstantNotPresentException(typeref.getClass(),typeref.name());
+            }
+            default -> throw new EnumConstantNotPresentException(typeref.getClass(),typeref.name());
         }
         // type path
         int path_length = buffer.nextUnsignedByte();

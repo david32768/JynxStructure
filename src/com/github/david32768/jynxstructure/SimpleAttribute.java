@@ -14,26 +14,17 @@ public class SimpleAttribute extends AttributeInstance {
         int ct = itemCount();
         AttributeEntry[] entries = attr.entries();
         for (int i = 0; i < ct; ++i) {
-            AttributeChecker.check(entries, ptr, buffer);
+            AttributeChecker.check(entries, buffer);
         }
     }
 
     private int itemCount() {
-        int ct;
-        switch (attr.type()) {
-            case FIXED:
-                ct = 1;
-                break;
-            case ARRAY1:
-                ct = buffer.nextUnsignedByte();
-                break;
-            case ARRAY:
-                ct = buffer.nextUnsignedShort();
-                break;
-            default:
-                throw new AssertionError();
-        }
-        return ct;
+        return switch (attr.type()) {
+            case FIXED -> 1;
+            case ARRAY1 -> buffer.nextUnsignedByte();
+            case ARRAY -> buffer.nextUnsignedShort();
+            default -> throw new AssertionError();
+        };
     }
     
 }

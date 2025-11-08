@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
 import static com.github.david32768.jynxfree.jynx.Global.OPTION;
 import static com.github.david32768.jynxstructure.my.Message.M516;
+import static com.github.david32768.jynxstructure.my.Message.M533;
 
 import com.github.david32768.jynxfree.classfile.Opcodes;
 import com.github.david32768.jynxfree.jvm.ConstantPoolType;
@@ -15,6 +16,8 @@ import com.github.david32768.jynxfree.jvm.OpArg;
 import com.github.david32768.jynxfree.jvm.OpPart;
 import com.github.david32768.jynxfree.jvm.StandardAttribute;
 import com.github.david32768.jynxfree.jynx.GlobalOption;
+import com.github.david32768.jynxfree.jynx.LogIllegalArgumentException;
+import com.github.david32768.jynxfree.jynx.LogUnexpectedEnumValueException;
 import com.github.david32768.jynxfree.jynx.StringUtil;
 
 public class InstBuffer extends AbstractCodeBuffer {
@@ -63,7 +66,7 @@ public class InstBuffer extends AbstractCodeBuffer {
                 op = Opcodes.of(opcode);                
             }
             OpArg arg = OpArg.of(op);
-            boolean print = OPTION(GlobalOption.DETAIL);
+            boolean print = OPTION(GlobalOption.DETAIL) || OPTION(GlobalOption.DETAIL_INSTRUCTIONS);
             switch(arg) {
                 case arg_switch -> {
                     align4(instoff + 1);
@@ -100,11 +103,10 @@ public class InstBuffer extends AbstractCodeBuffer {
         }
     }
     
-    public String extra(Opcode op, OpArg arg, int instoff) {
-        String result = "";
+    private String extra(Opcode op, OpArg arg, int instoff) {
+        StringBuilder sb = new StringBuilder();
         for (OpPart fmt:arg.getParts()) {
-            String extra;
-            switch(fmt) {
+            String extra = switch(fmt) {
                 case CP -> {
                     CPEntry cp;
                     if (op == Opcode.LDC) {
@@ -118,12 +120,13 @@ public class InstBuffer extends AbstractCodeBuffer {
                         extra = StringUtil.QuoteEscape(extra);
                     }
                     arg.checkCPType(cpt);
+                    yield extra;
                 }
                 case LABEL -> {
                     int jmplab = Opcodes.isWide(op)?
                             nextBranchLabel(instoff):
                             nextIfLabel(instoff);
-                    extra = "@" + Integer.toString(jmplab);
+                    yield "@" + Integer.toString(jmplab);
                 }
                 case VAR -> {
                     int var;
@@ -135,7 +138,7 @@ public class InstBuffer extends AbstractCodeBuffer {
                         var = nextUnsignedByte();
                     }
                     checkLocalVar(var);
-                    extra = Opcodes.isImmediate(op)? "": Integer.toString(var);
+                    yield Opcodes.isImmediate(op)? "": Integer.toString(var);
                 }
                 case INCR -> {
                     int incr;
@@ -144,35 +147,40 @@ public class InstBuffer extends AbstractCodeBuffer {
                     } else {
                         incr = nextByte();
                     }
-                    extra = Integer.toString(incr);
+                    yield Integer.toString(incr);
                 }
                 case BYTE -> {
                     int b = nextByte();
-                    extra = Integer.toString(b);
+                    yield Integer.toString(b);
                 }
                 case SHORT -> {
                     int s = nextShort();
-                    extra = Integer.toString(s);
+                    yield Integer.toString(s);
                 }
                 case TYPE -> {
                     int t = nextUnsignedByte();
-                    extra = NumType.getInstance(t).externalName();
+                    yield NumType.getInstance(t).externalName();
                 }
                 case UBYTE -> {
                     int u = nextUnsignedByte();
-                    extra = Integer.toString(u);
+                    yield Integer.toString(u);
                 }
                 case ZERO -> {
                     int z = nextByte();
-                    extra = "";
+                    if (z != 0) {
+                        // "expected zero byte in %s is %d"
+                        throw new LogIllegalArgumentException(M533, op);
+                    }
+                    yield Integer.toString(z);
                 }
-                default -> throw new EnumConstantNotPresentException(fmt.getClass(), fmt.name());
-            }
+                case null -> throw new AssertionError();
+                default -> throw new LogUnexpectedEnumValueException(fmt);
+            };
             if (!extra.isEmpty()) {
-                result += " " + extra;
+                sb.append(' ').append(extra);
             }
         }
-        return result;
+        return sb.toString();
     }
     
 }

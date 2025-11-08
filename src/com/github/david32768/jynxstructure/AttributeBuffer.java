@@ -24,15 +24,11 @@ public class AttributeBuffer extends Buffer {
     }
         
     public int level() {
-        switch(context) {
-                case COMPONENT:
-                case CODE:
-                    return 2;
-                case CLASS:
-                    return 0;
-                default:
-                    return 1;
-        }
+        return switch (context) {
+            case COMPONENT, CODE -> 2;
+            case CLASS -> 0;
+            default -> 1;
+        };
     }
     
     public CodeBuffer codeBuffer(IndentPrinter ptr) {

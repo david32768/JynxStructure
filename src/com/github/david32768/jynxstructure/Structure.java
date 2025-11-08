@@ -56,18 +56,23 @@ public class Structure {
         int poolend = bb.position();
         ptr.println("CONSTANT POOL  entries = [1,%d] ; start = %#x length = %#x",
                 pool.last(), poolstart, poolend - poolstart);
-        if (OPTION(GlobalOption.DETAIL)) {
-            pool.printCP(ptr,false);
+        if (OPTION(GlobalOption.DETAIL) || OPTION(GlobalOption.DETAIL_CONSTANT_POOL)) {
+            pool.printCP(ptr);
         }
+        pool.resetUsed();
+        IndentPrinter classptr = OPTION(GlobalOption.DETAIL_CONSTANT_POOL)?
+                new IndentPrinter(new PrintWriter(PrintWriter.nullWriter())):
+                ptr;
         Buffer buffer = new Buffer(pool,bb);
         int access = buffer.nextUnsignedShort();
         String klassname = buffer.nextClassName();
         Structure struct =  new Structure(klassname, jvmversion);
-        struct.checkClass(ptr,buffer,access);
-        boolean bootok = pool.checkBootstraps();
-        if (!bootok) {
-            pool.printCP(ptr,true);
+        struct.checkClass(classptr,buffer,access);
+        pool.checkBootstraps();
+        if (OPTION(GlobalOption.DETAIL) || OPTION(GlobalOption.DETAIL_CONSTANT_POOL)) {
+            pool.printBoot(ptr);
         }
+        pool.checkUsed();
     }
     
     private void checkClass(IndentPrinter ptr, Buffer buffer, int access) {
@@ -160,20 +165,10 @@ public class Structure {
         AttributeBuffer attrbuff = attrx.buffer();
         AttributeType attrtype = attr.type();
         switch (attrtype) {
-            case FIXED:
-            case ARRAY1:
-            case ARRAY:
-            case MODULE:
-                attrx.checkCPEntries(ptr);
-                break;
-            case CODE:
-                checkCode(ptr, attrbuff);
-                break;
-            case RECORD:
-                checkRecord(ptr,attrbuff);
-                break;
-            default:
-                throw new EnumConstantNotPresentException(attrtype.getClass(), attrtype.name());
+            case FIXED, ARRAY1, ARRAY, MODULE -> attrx.checkCPEntries(ptr);
+            case CODE -> checkCode(ptr, attrbuff);
+            case RECORD -> checkRecord(ptr,attrbuff);
+            default -> throw new EnumConstantNotPresentException(attrtype.getClass(), attrtype.name());
         }
     }
 

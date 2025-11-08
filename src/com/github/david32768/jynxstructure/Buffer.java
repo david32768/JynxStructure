@@ -147,6 +147,10 @@ public class Buffer {
         throw new UnsupportedOperationException();
     }
         
+    public Buffer duplicate() {
+        return new Buffer(pool, bb.duplicate());
+    }
+    
     protected ByteBuffer extract(int size) {
         ByteBuffer tobb = bb.duplicate();
         advance(size);
