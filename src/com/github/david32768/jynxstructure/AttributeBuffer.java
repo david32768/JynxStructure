@@ -36,6 +36,7 @@ public class AttributeBuffer extends Buffer {
         nextShort(); // max stack
         int maxlocals = nextShort(); //max locals
         int codesz = nextSize(); // code length
+        ptr.println("; code size = %#x", codesz);
         InstBuffer instbuff = new InstBuffer(pool, extract(codesz), maxlocals, codesz);
         instbuff.checkInsn(ptr.shift());
         CodeBuffer result = instbuff.codeBuffer(bb.duplicate());
