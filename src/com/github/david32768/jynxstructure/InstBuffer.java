@@ -117,7 +117,7 @@ public class InstBuffer extends AbstractCodeBuffer {
                     extra = stringValue(cp);
                     ConstantPoolType cpt = cp.getType();
                     if (cpt == ConstantPoolType.CONSTANT_String) {
-                        extra = StringUtil.QuoteEscape(extra);
+                        extra = StringUtil.quoteEscape(extra);
                     }
                     arg.checkCPType(cpt);
                     yield extra;
@@ -159,7 +159,8 @@ public class InstBuffer extends AbstractCodeBuffer {
                 }
                 case TYPE -> {
                     int t = nextUnsignedByte();
-                    yield NumType.getInstance(t).externalName();
+                    NumType nt = NumType.getInstance(t);
+                    yield nt.externalName();
                 }
                 case UBYTE -> {
                     int u = nextUnsignedByte();

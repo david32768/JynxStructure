@@ -37,11 +37,7 @@ public class Structure {
 
     private static final int MAGIC = 0xcafebabe;
     
-    public static void checkInstance(PrintWriter pw, String klass) throws IOException {
-        IndentPrinter ptr = new IndentPrinter(pw);
-        ByteBuffer bb = ByteBuffer.wrap(ClassUtil.getClassBytes(klass));
-        bb = bb.asReadOnlyBuffer();
-        bb.order(ByteOrder.BIG_ENDIAN);
+    private static void checkInstance(IndentPrinter ptr, ByteBuffer bb) throws IOException {
         int qmagic = bb.getInt();
         if (qmagic != MAGIC) {
             // "magic number is %#x; should be %#x"
@@ -178,12 +174,16 @@ public class Structure {
         for (int i = 0; i < ct; ++i) {
             int startpc = codebuff.nextLabel();
             int endpc = codebuff.nextLabel();
+            int handlerpc = codebuff.nextLabel();
+            Optional<CPEntry> optentry = codebuff.nextOptCPEntry(ConstantPoolType.CONSTANT_Class);
+            String handle = (String)optentry.map(cpe -> attrbuff.pool.stringValue(cpe)).orElse("all");
+            if (OPTION(GlobalOption.DETAIL_INSTRUCTIONS) || OPTION(GlobalOption.DETAIL)) {
+                ptr.shift().println("catch %s in [%d, %d) at %d", handle, startpc, endpc, handlerpc);
+            }
             if (endpc < startpc) {
                 // "startpc (%d) > endpc (%d)"
                 LOG(M503, startpc, endpc);
             }
-            int handlerpc = codebuff.nextLabel();
-            Optional<CPEntry> optentry = codebuff.nextOptCPEntry(ConstantPoolType.CONSTANT_Class);
         }
         check_attrs(CODE, ptr, codebuff);
     }
@@ -218,15 +218,20 @@ public class Structure {
     
     public static boolean printClassStructure(String klass, PrintWriter pw) {
         try {
+            ByteBuffer bb = ByteBuffer.wrap(ClassUtil.getClassBytes(klass));
+            bb = bb.asReadOnlyBuffer();
+            bb.order(ByteOrder.BIG_ENDIAN);
             pw.println("START " + klass);
-            Structure.checkInstance(pw, klass);
+            IndentPrinter ptr = new IndentPrinter(pw);
+            Structure.checkInstance(ptr, bb);
             pw.println("END " + klass);
         } catch(IOException ioex) {
             LOG(ioex);
             return false;
         }
+        boolean ok = END_MESSAGES(klass);
         pw.flush();
-        return true;
+        return ok;
     }
 
 }

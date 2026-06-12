@@ -113,7 +113,8 @@ public class ConstantPool {
             if (cp == null) {
                 continue;
             }
-            ConstantPoolType.EntryType et = cp.getType().getEntryType();
+            ConstantPoolType cptype = cp.getType();
+            ConstantPoolType.EntryType et = cptype.getEntryType();
             Object value = cp.getValue();
             switch(et) {
                 case INDIRECT -> {
@@ -154,9 +155,9 @@ public class ConstantPool {
         used.clear();
     }
     
-    public void usedIndex(int cpindex) {
-        used.set(cpindex);
+    private void usedIndex(int cpindex) {
         CPEntry cp = entries[cpindex];
+        used.set(cpindex);
         ConstantPoolType.EntryType et = cp.getType().getEntryType();
         Object value = cp.getValue();
         switch(et) {
@@ -253,7 +254,7 @@ public class ConstantPool {
             String cpstr = stringValue(cp);
             ConstantPoolType cpt = cp.getType();
             if (cpt == ConstantPoolType.CONSTANT_String) {
-                cpstr = StringUtil.QuoteEscape(cpstr);
+                cpstr = StringUtil.quoteEscape(cpstr);
             } else {
                 cpstr = StringUtil.printable(cpstr);
             }

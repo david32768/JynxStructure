@@ -40,6 +40,7 @@ public enum Message implements JynxMessage {
     M534(INFO,"*** entry %d is duplicate of %d ***"),
     M535(INFO,"%d bootstraps are not used"),
     M536(INFO,"BootStrap %d is not used"),
+
     ;
 
     private final LogMsgType logtype;

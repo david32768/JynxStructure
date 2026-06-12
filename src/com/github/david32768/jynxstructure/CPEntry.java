@@ -2,6 +2,7 @@ package com.github.david32768.jynxstructure;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
@@ -142,6 +143,16 @@ public class CPEntry {
             valuestr = value.toString();
         }
         return String.format("type = %s value = %s",type,valuestr);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof CPEntry that && this.type.equals(that.type) && this.value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, value);
     }
 
 }

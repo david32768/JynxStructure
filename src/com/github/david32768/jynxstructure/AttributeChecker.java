@@ -132,8 +132,16 @@ public class AttributeChecker {
         for (int i = 0; i <size; ++i) {
             int tag = buffer.nextUnsignedByte();
             FrameType ft = FrameType.fromJVMType(tag);
-            if (ft.asmType() == null) {
-                buffer.nextUnsignedShort();
+            switch (ft) {
+                case ft_Object -> {
+                    buffer.nextCPEntry(ConstantPoolType.CONSTANT_Class);
+                }
+                case ft_Uninitialized -> {
+                    buffer.asCodeBuffer().nextLabel();
+                }
+                default -> {
+                    assert ft.asmType() != null;
+                }
             }
         }
     }

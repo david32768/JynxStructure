@@ -12,7 +12,11 @@ public class MainStructure implements MainOptionService {
         return MainOption.STRUCTURE;
     }
 
-
+    @Override
+    public String version() {
+        return "0.25.4";
+    }
+    
     @Override
     public boolean call(PrintWriter pw, String fname) {
         return Structure.printClassStructure(fname,pw);
