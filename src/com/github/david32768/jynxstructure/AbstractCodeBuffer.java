@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import static com.github.david32768.jynxfree.jynx.Global.LOG;
 import static com.github.david32768.jynxstructure.my.Message.M518;
+import static com.github.david32768.jynxstructure.my.Message.M538;
 
 import com.github.david32768.jynxfree.jvm.Context;
 import com.github.david32768.jynxfree.jvm.StandardAttribute;
@@ -30,5 +31,17 @@ public abstract class AbstractCodeBuffer extends AttributeBuffer {
             LOG(M518, var, maxlocal);
         }
     }
-    
+
+    public int checkLabel(int instoff, int broff) {
+        return labels.labelOffset(instoff, broff);
+    }
+
+    public int checkNew(int offset) {
+        checkLabel(0, offset);
+        if (!labels.isNewInst(offset)) {
+            // "offset %d is not instruction NEW"
+            LOG(M538, offset);
+        }
+        return offset;
+    }
 }

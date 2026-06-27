@@ -9,14 +9,17 @@ import static com.github.david32768.jynxstructure.my.Message.M524;
 
 public class CodeLabels {
     
+    private final int codesz;
+
     private final BitSet poslabels;
     private final BitSet actlabels;
-    private final int codesz;
+    private final BitSet newlabels;
 
     public CodeLabels(int codesz) {
         this.codesz = codesz;
         this.poslabels = new BitSet(codesz + 1);
         this.actlabels = new BitSet(codesz + 1);
+        this.newlabels = new BitSet(codesz + 1);
     }
     
     public int labelOffset(int instoff, int broff) {
@@ -48,4 +51,12 @@ public class CodeLabels {
         poslabels.set(instoff);
     }
    
+    public void setNewInst(int instoff) {
+        newlabels.set(instoff);
+    }
+
+    public boolean isNewInst(int instoff) {
+        return newlabels.get(instoff);
+    }
+
 }

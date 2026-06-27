@@ -1,6 +1,6 @@
 
 
-Requires Java V24.
+Requires Java V25.
 
 Accessed via module com.github.david32768.JynxFree.
 

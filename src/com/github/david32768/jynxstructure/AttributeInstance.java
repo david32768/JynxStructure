@@ -27,7 +27,7 @@ public abstract class AttributeInstance {
         return name;
     }
 
-    public int sizs() {
+    public int size() {
         return size;
     }
 

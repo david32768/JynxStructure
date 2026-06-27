@@ -3,6 +3,8 @@ package com.github.david32768.jynxstructure;
 import com.github.david32768.jynxfree.jvm.AttributeEntry;
 import com.github.david32768.jynxfree.jvm.StandardAttribute;
 
+import com.github.david32768.jynxstructure.attribute.SimpleAttributeElement;
+
 public class SimpleAttribute extends AttributeInstance {
 
     public SimpleAttribute(StandardAttribute attr, AttributeBuffer buffer) {
@@ -14,7 +16,10 @@ public class SimpleAttribute extends AttributeInstance {
         int ct = itemCount();
         AttributeEntry[] entries = attr.entries();
         for (int i = 0; i < ct; ++i) {
-            AttributeChecker.check(entries, buffer);
+            for (AttributeEntry entry:entries) {
+                SimpleAttributeElement sae = SimpleAttributeElement.of(ptr, entry, buffer);
+                sae.check();
+            }
         }
     }
 

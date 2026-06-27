@@ -33,11 +33,11 @@ public class InstBuffer extends AbstractCodeBuffer {
     
     
     public int nextBranchLabel(int instoff) {
-        return labels.labelOffset(instoff, nextInt());
+        return checkLabel(instoff, nextInt());
     }
     
     public int nextIfLabel(int instoff) {
-        return labels.labelOffset(instoff, nextShort());
+        return checkLabel(instoff, nextShort());
     }
     
     public void setPosLabel(int instoff) {
@@ -64,6 +64,9 @@ public class InstBuffer extends AbstractCodeBuffer {
                 
             } else {
                 op = Opcodes.of(opcode);                
+            }
+            switch(op) {
+                case NEW -> labels.setNewInst(instoff);
             }
             OpArg arg = OpArg.of(op);
             boolean print = OPTION(GlobalOption.DETAIL) || OPTION(GlobalOption.DETAIL_INSTRUCTIONS);

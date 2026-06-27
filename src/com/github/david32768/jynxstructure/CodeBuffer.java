@@ -26,11 +26,15 @@ public class CodeBuffer extends AbstractCodeBuffer {
     }
     
     public int nextLabel() {
-        return labels.labelOffset(0, nextUnsignedShort());
+        return checkLabel(0, nextUnsignedShort());
+    }
+    
+    public int nextNewLabel() {
+        return checkNew(nextUnsignedShort());
     }
     
     public int nextEndOffset(int pc) {
-        return labels.labelOffset(pc, nextUnsignedShort());
+        return checkLabel(pc, nextUnsignedShort());
     }
     
     public int nextVar() {
@@ -39,12 +43,13 @@ public class CodeBuffer extends AbstractCodeBuffer {
         return lvindex;
     }
     
-    public void addDelta(int delta) {
+    public int addDelta(int delta) {
         if (delta < 0 || delta > 2*Short.MAX_VALUE + 1) {
             throw new AssertionError();
         }
-        ++delta; // as stackmappOffset is initialised to -1
-        stackmapOffset = labels.labelOffset(stackmapOffset, delta);
+        ++delta; // as stackmapOffset is initialised to -1
+        stackmapOffset = checkLabel(stackmapOffset, delta);
+        return stackmapOffset;
     }
 
 }

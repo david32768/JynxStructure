@@ -24,6 +24,7 @@ import com.github.david32768.jynxfree.jvm.JvmVersion;
 import com.github.david32768.jynxfree.jynx.ClassUtil;
 import com.github.david32768.jynxfree.jynx.GlobalOption;
 import com.github.david32768.jynxfree.jynx.LogIllegalArgumentException;
+import com.github.david32768.jynxfree.jynx.LogUnexpectedEnumValueException;
 
 public class Structure {
 
@@ -141,7 +142,7 @@ public class Structure {
             AttributeInstance attr = AttributeInstance.getInstance(attrbuff);
             String attrdesc = attr.attrDesc(jvmVersion);
             ptr.println("%s ; start = %#x length = %#x",
-                    attrdesc, start_offset, attr.sizs());
+                    attrdesc, start_offset, attr.size());
             if (!attr.isKnown()) {
                 continue;
             }
@@ -164,7 +165,7 @@ public class Structure {
             case FIXED, ARRAY1, ARRAY, MODULE -> attrx.checkCPEntries(ptr);
             case CODE -> checkCode(ptr, attrbuff);
             case RECORD -> checkRecord(ptr,attrbuff);
-            default -> throw new EnumConstantNotPresentException(attrtype.getClass(), attrtype.name());
+            default -> throw new LogUnexpectedEnumValueException(attrtype);
         }
     }
 

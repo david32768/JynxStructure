@@ -14,7 +14,7 @@ public class MainStructure implements MainOptionService {
 
     @Override
     public String version() {
-        return "0.25.4";
+        return "0.25.5";
     }
     
     @Override
